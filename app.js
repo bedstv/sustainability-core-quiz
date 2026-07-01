@@ -1,6 +1,7 @@
 (() => {
   "use strict";
 
+  const SITE_VERSION = "20260701-2";
   const BANK = window.QUESTION_BANK || [];
   const MODULES = {
     C011: "C011 永續發展與 SDGs",
@@ -33,6 +34,7 @@
     quiz: $("#quizView"),
     result: $("#resultView"),
     theme: $("#themeToggle"),
+    update: $("#updateButton"),
     count: $("#questionCount"),
     batchPicker: $("#batchPicker"),
     start: $("#startButton"),
@@ -102,6 +104,33 @@
     document.documentElement.dataset.theme = theme;
     localStorage.setItem(STORAGE.theme, theme);
     els.theme.setAttribute("aria-label", theme === "dark" ? "切換淺色模式" : "切換深色模式");
+  }
+
+  async function checkForUpdates(manual = false) {
+    if (location.protocol === "file:") {
+      if (manual) toast("本機預覽不檢查線上版本。");
+      return;
+    }
+    try {
+      const response = await fetch(`version.json?t=${Date.now()}`, { cache: "no-store" });
+      if (!response.ok) throw new Error("Version check failed");
+      const { version } = await response.json();
+      if (!version || version === SITE_VERSION) {
+        if (manual) toast("目前已是最新版本。");
+        return;
+      }
+      const reloadKey = `sustainabilityQuizReloadedFor-${version}`;
+      if (sessionStorage.getItem(reloadKey)) {
+        toast("已有新版，請重新整理頁面。");
+        return;
+      }
+      sessionStorage.setItem(reloadKey, "1");
+      const url = new URL(location.href);
+      url.searchParams.set("v", version);
+      location.replace(url.toString());
+    } catch {
+      if (manual) toast("暫時無法檢查更新，請稍後再試。");
+    }
   }
 
   function refreshConfig() {
@@ -406,6 +435,7 @@
 
   function bindEvents() {
     els.theme.addEventListener("click", () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
+    els.update.addEventListener("click", () => checkForUpdates(true));
     $$('input[name="topic"], input[name="batch"], input[name="mode"]').forEach((input) => input.addEventListener("change", refreshConfig));
     els.count.addEventListener("change", refreshConfig);
     els.start.addEventListener("click", startQuiz);
@@ -440,6 +470,7 @@
     bindEvents();
     refreshConfig();
     updateDashboard();
+    checkForUpdates(false);
     if (BANK.length !== 300) console.warn(`題庫數量目前為 ${BANK.length}，預期為 300。`);
   }
 
