@@ -14,6 +14,7 @@
   };
   const state = {
     topic: "ALL",
+    batch: "all",
     mode: "exam",
     count: 25,
     questions: [],
@@ -33,6 +34,7 @@
     result: $("#resultView"),
     theme: $("#themeToggle"),
     count: $("#questionCount"),
+    batchPicker: $("#batchPicker"),
     start: $("#startButton"),
     durationLabel: $("#durationLabel"),
     durationNote: $("#durationNote"),
@@ -63,6 +65,7 @@
     dialog: $("#confirmDialog"),
     dialogTitle: $("#dialogTitle"),
     dialogMessage: $("#dialogMessage"),
+    dialogConfirm: $("#dialogConfirm"),
     scoreRing: $("#scoreRing"),
     scoreValue: $("#scoreValue"),
     resultTitle: $("#resultTitle"),
@@ -103,7 +106,9 @@
 
   function refreshConfig() {
     state.topic = $('input[name="topic"]:checked')?.value || "ALL";
+    state.batch = $('input[name="batch"]:checked')?.value || "all";
     state.mode = $('input[name="mode"]:checked')?.value || "exam";
+    els.batchPicker.disabled = state.topic === "WRONG";
     state.count = Number(els.count.value);
     if (state.topic === "WRONG") {
       const available = readJSON(STORAGE.wrong, []).length;
@@ -119,8 +124,9 @@
     if (state.topic === "WRONG") {
       return shuffle(BANK.filter((q) => wrongIds.includes(q.id))).slice(0, state.count);
     }
+    const eligibleBank = state.batch === "all" ? BANK : BANK.filter((q) => q.batch === state.batch);
     if (state.topic !== "ALL") {
-      return shuffle(BANK.filter((q) => q.module === state.topic)).slice(0, state.count);
+      return shuffle(eligibleBank.filter((q) => q.module === state.topic)).slice(0, state.count);
     }
     const modules = Object.keys(MODULES);
     const base = Math.floor(state.count / modules.length);
@@ -128,7 +134,7 @@
     const selected = [];
     modules.forEach((module) => {
       const take = base + (remainder-- > 0 ? 1 : 0);
-      selected.push(...shuffle(BANK.filter((q) => q.module === module)).slice(0, take));
+      selected.push(...shuffle(eligibleBank.filter((q) => q.module === module)).slice(0, take));
     });
     return shuffle(selected);
   }
@@ -153,7 +159,8 @@
     state.results = null;
     clearInterval(state.timerId);
     if (state.mode === "exam") state.timerId = setInterval(tick, 1000);
-    els.quizMeta.textContent = `${state.topic === "ALL" ? "核心模組綜合" : state.topic === "WRONG" ? "錯題特訓" : MODULES[state.topic]} · ${state.mode === "exam" ? "正式模擬" : "即時練習"}`;
+    const batchLabel = state.topic === "WRONG" ? "跨批次" : ({ all: "全部題庫", original: "原始題庫", expanded: "本次新增" })[state.batch];
+    els.quizMeta.textContent = `${state.topic === "ALL" ? "核心模組綜合" : state.topic === "WRONG" ? "錯題特訓" : MODULES[state.topic]} · ${batchLabel} · ${state.mode === "exam" ? "正式模擬" : "即時練習"}`;
     els.timer.hidden = state.mode !== "exam";
     renderPalette();
     renderQuestion();
@@ -263,6 +270,7 @@
     const unanswered = state.answers.filter((answer) => answer === null).length;
     els.dialogTitle.textContent = "確定要交卷嗎？";
     els.dialogMessage.textContent = unanswered ? `還有 ${unanswered} 題尚未作答，交卷後將無法修改。` : "所有題目都已作答，準備查看結果。";
+    els.dialogConfirm.textContent = "確定交卷";
     els.dialog.returnValue = "";
     els.dialog.showModal();
   }
@@ -270,6 +278,7 @@
   function confirmExit() {
     els.dialogTitle.textContent = "要離開這次測驗嗎？";
     els.dialogMessage.textContent = "目前作答內容不會保存。";
+    els.dialogConfirm.textContent = "確定離開";
     els.dialog.returnValue = "";
     els.dialog.showModal();
     els.dialog.dataset.action = "exit";
@@ -296,6 +305,7 @@
     history.unshift({
       date: new Date().toISOString(),
       topic: state.topic,
+      batch: state.batch,
       mode: state.mode,
       score: state.results.score,
       correct: state.results.correctCount,
@@ -396,7 +406,7 @@
 
   function bindEvents() {
     els.theme.addEventListener("click", () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
-    $$('input[name="topic"], input[name="mode"]').forEach((input) => input.addEventListener("change", refreshConfig));
+    $$('input[name="topic"], input[name="batch"], input[name="mode"]').forEach((input) => input.addEventListener("change", refreshConfig));
     els.count.addEventListener("change", refreshConfig);
     els.start.addEventListener("click", startQuiz);
     els.prev.addEventListener("click", () => moveQuestion(-1));
@@ -430,7 +440,7 @@
     bindEvents();
     refreshConfig();
     updateDashboard();
-    if (BANK.length !== 180) console.warn(`題庫數量目前為 ${BANK.length}，預期為 180。`);
+    if (BANK.length !== 300) console.warn(`題庫數量目前為 ${BANK.length}，預期為 300。`);
   }
 
   init();
