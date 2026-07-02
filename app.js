@@ -1,21 +1,27 @@
 (() => {
   "use strict";
 
-  const SITE_VERSION = "20260701-2";
+  const SITE_VERSION = "20260702-1";
   const BANK = window.QUESTION_BANK || [];
   const MODULES = {
     C011: "C011 永續發展與 SDGs",
     C012: "C012 全球淨零與 COP",
-    C013: "C013 永續金融與碳定價"
+    C013: "C013 永續金融與碳定價",
+    C021: "C021 永續規範與 ISSB",
+    C022: "C022 全球永續報告準則",
+    C023: "C023 SASB 準則"
   };
   const STORAGE = {
     history: "sustainabilityQuizHistoryV1",
     wrong: "sustainabilityQuizWrongV1",
+    coverage: "sustainabilityQuizCoverageV1",
+    rotation: "sustainabilityQuizRotationEnabled",
     theme: "sustainabilityQuizTheme"
   };
   const state = {
-    topic: "ALL",
-    batch: "all",
+    selectedModules: Object.keys(MODULES),
+    isWrongMode: false,
+    smartRotation: true,
     mode: "exam",
     count: 25,
     questions: [],
@@ -36,11 +42,16 @@
     theme: $("#themeToggle"),
     update: $("#updateButton"),
     count: $("#questionCount"),
-    batchPicker: $("#batchPicker"),
     start: $("#startButton"),
+    startWrong: $("#startWrongButton"),
+    selectAll: $("#selectAllTopics"),
+    clearTopics: $("#clearTopics"),
+    selectionSummary: $("#selectionSummary"),
+    rotationToggle: $("#rotationToggle"),
+    rotationStatus: $("#rotationStatus"),
     durationLabel: $("#durationLabel"),
     durationNote: $("#durationNote"),
-    wrongCard: $("#wrongTopicCard"),
+    wrongPractice: $("#wrongPractice"),
     wrongCount: $("#wrongTopicCount"),
     attempts: $("#attemptStat"),
     average: $("#averageStat"),
@@ -134,36 +145,64 @@
   }
 
   function refreshConfig() {
-    state.topic = $('input[name="topic"]:checked')?.value || "ALL";
-    state.batch = $('input[name="batch"]:checked')?.value || "all";
+    state.selectedModules = $$('input[name="topic"]:checked').map((input) => input.value);
     state.mode = $('input[name="mode"]:checked')?.value || "exam";
-    els.batchPicker.disabled = state.topic === "WRONG";
+    state.smartRotation = els.rotationToggle.checked;
+    els.rotationStatus.textContent = state.smartRotation ? "已開啟" : "已關閉";
     state.count = Number(els.count.value);
-    if (state.topic === "WRONG") {
+    if (state.isWrongMode) {
       const available = readJSON(STORAGE.wrong, []).length;
       state.count = Math.min(state.count, available);
     }
+    els.selectionSummary.textContent = state.selectedModules.length
+      ? `已選 ${state.selectedModules.length} 科 · 可用 ${state.selectedModules.length * 100} 題`
+      : "尚未選擇講義";
     const timed = state.mode === "exam";
     els.durationLabel.textContent = timed ? "45 分鐘" : "不限時間";
     els.durationNote.textContent = timed ? "時間到自動交卷" : "作答後立即看解析";
   }
 
+  function rankedByCoverage(pool) {
+    const coverage = readJSON(STORAGE.coverage, {});
+    return shuffle(pool).sort((a, b) => {
+      const left = coverage[a.id] || { count: 0, lastSeen: 0 };
+      const right = coverage[b.id] || { count: 0, lastSeen: 0 };
+      return left.count - right.count || left.lastSeen - right.lastSeen;
+    });
+  }
+
+  function recordCoverage(questions) {
+    if (state.isWrongMode || !state.smartRotation) return;
+    const coverage = readJSON(STORAGE.coverage, {});
+    const now = Date.now();
+    questions.forEach((question, index) => {
+      const previous = coverage[question.id] || { count: 0, lastSeen: 0 };
+      coverage[question.id] = { count: previous.count + 1, lastSeen: now + index };
+    });
+    localStorage.setItem(STORAGE.coverage, JSON.stringify(coverage));
+  }
+
   function chooseQuestions() {
     const wrongIds = readJSON(STORAGE.wrong, []);
-    if (state.topic === "WRONG") {
+    if (state.isWrongMode) {
       return shuffle(BANK.filter((q) => wrongIds.includes(q.id))).slice(0, state.count);
     }
-    const eligibleBank = state.batch === "all" ? BANK : BANK.filter((q) => q.batch === state.batch);
-    if (state.topic !== "ALL") {
-      return shuffle(eligibleBank.filter((q) => q.module === state.topic)).slice(0, state.count);
+    const coverage = readJSON(STORAGE.coverage, {});
+    const moduleExposure = (module) => BANK
+      .filter((question) => question.module === module)
+      .reduce((total, question) => total + (coverage[question.id]?.count || 0), 0);
+    const modules = shuffle(state.selectedModules);
+    if (state.smartRotation) {
+      modules.sort((left, right) => moduleExposure(left) - moduleExposure(right));
     }
-    const modules = Object.keys(MODULES);
     const base = Math.floor(state.count / modules.length);
     let remainder = state.count % modules.length;
     const selected = [];
     modules.forEach((module) => {
       const take = base + (remainder-- > 0 ? 1 : 0);
-      selected.push(...shuffle(eligibleBank.filter((q) => q.module === module)).slice(0, take));
+      const pool = BANK.filter((q) => q.module === module);
+      const candidates = state.smartRotation ? rankedByCoverage(pool) : shuffle(pool);
+      selected.push(...candidates.slice(0, take));
     });
     return shuffle(selected);
   }
@@ -175,11 +214,16 @@
 
   function startQuiz() {
     refreshConfig();
+    if (!state.isWrongMode && !state.selectedModules.length) {
+      toast("請至少選擇一份講義。");
+      return;
+    }
     const selected = chooseQuestions();
     if (!selected.length) {
       toast("目前沒有可用的錯題，先完成一回測驗吧。");
       return;
     }
+    recordCoverage(selected);
     state.questions = selected.map(prepareQuestion);
     state.answers = Array(state.questions.length).fill(null);
     state.current = 0;
@@ -188,8 +232,13 @@
     state.results = null;
     clearInterval(state.timerId);
     if (state.mode === "exam") state.timerId = setInterval(tick, 1000);
-    const batchLabel = state.topic === "WRONG" ? "跨批次" : ({ all: "全部題庫", original: "原始題庫", expanded: "本次新增" })[state.batch];
-    els.quizMeta.textContent = `${state.topic === "ALL" ? "核心模組綜合" : state.topic === "WRONG" ? "錯題特訓" : MODULES[state.topic]} · ${batchLabel} · ${state.mode === "exam" ? "正式模擬" : "即時練習"}`;
+    const scopeLabel = state.isWrongMode
+      ? "錯題特訓"
+      : state.selectedModules.length === 1
+        ? MODULES[state.selectedModules[0]]
+        : `${state.selectedModules.length} 科綜合`;
+    const drawLabel = state.isWrongMode ? "錯題抽選" : state.smartRotation ? "智慧輪替" : "隨機抽題";
+    els.quizMeta.textContent = `${scopeLabel} · ${drawLabel} · ${state.mode === "exam" ? "正式模擬" : "即時練習"}`;
     els.timer.hidden = state.mode !== "exam";
     renderPalette();
     renderQuestion();
@@ -333,8 +382,8 @@
     const history = readJSON(STORAGE.history, []);
     history.unshift({
       date: new Date().toISOString(),
-      topic: state.topic,
-      batch: state.batch,
+      topic: state.isWrongMode ? "WRONG" : state.selectedModules.length === 1 ? state.selectedModules[0] : "MULTI",
+      topics: state.isWrongMode ? [] : [...state.selectedModules],
       mode: state.mode,
       score: state.results.score,
       correct: state.results.correctCount,
@@ -397,7 +446,7 @@
     els.average.textContent = history.length ? `${Math.round(history.reduce((sum, item) => sum + item.score, 0) / history.length)}%` : "—";
     els.best.textContent = history.length ? Math.max(...history.map((item) => item.score)) : "—";
     els.wrongStat.textContent = wrong.length;
-    els.wrongCard.hidden = wrong.length === 0;
+    els.wrongPractice.hidden = wrong.length === 0;
     els.wrongCount.textContent = `${wrong.length} 題待複習，答對後自動移除`;
     els.moduleProgress.innerHTML = Object.entries(MODULES).map(([module, label]) => {
       let correct = 0, total = 0;
@@ -414,10 +463,10 @@
     if (!confirm("確定清除所有測驗紀錄與錯題嗎？")) return;
     localStorage.removeItem(STORAGE.history);
     localStorage.removeItem(STORAGE.wrong);
-    const selectedWrong = $('input[name="topic"][value="WRONG"]');
-    if (selectedWrong?.checked) $('input[name="topic"][value="ALL"]').checked = true;
+    localStorage.removeItem(STORAGE.coverage);
+    state.isWrongMode = false;
     updateDashboard();
-    toast("學習紀錄已清除。");
+    toast("學習紀錄、錯題與輪替進度已清除。");
   }
 
   function toast(message) {
@@ -436,9 +485,28 @@
   function bindEvents() {
     els.theme.addEventListener("click", () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
     els.update.addEventListener("click", () => checkForUpdates(true));
-    $$('input[name="topic"], input[name="batch"], input[name="mode"]').forEach((input) => input.addEventListener("change", refreshConfig));
+    $$('input[name="topic"], input[name="mode"]').forEach((input) => input.addEventListener("change", refreshConfig));
+    els.rotationToggle.addEventListener("change", () => {
+      localStorage.setItem(STORAGE.rotation, String(els.rotationToggle.checked));
+      refreshConfig();
+    });
+    els.selectAll.addEventListener("click", () => {
+      $$('input[name="topic"]').forEach((input) => { input.checked = true; });
+      refreshConfig();
+    });
+    els.clearTopics.addEventListener("click", () => {
+      $$('input[name="topic"]').forEach((input) => { input.checked = false; });
+      refreshConfig();
+    });
     els.count.addEventListener("change", refreshConfig);
-    els.start.addEventListener("click", startQuiz);
+    els.start.addEventListener("click", () => {
+      state.isWrongMode = false;
+      startQuiz();
+    });
+    els.startWrong.addEventListener("click", () => {
+      state.isWrongMode = true;
+      startQuiz();
+    });
     els.prev.addEventListener("click", () => moveQuestion(-1));
     els.next.addEventListener("click", () => moveQuestion(1));
     els.submit.addEventListener("click", confirmSubmit);
@@ -454,7 +522,10 @@
       delete els.dialog.dataset.action;
     });
     els.retry.addEventListener("click", startQuiz);
-    els.backHome.addEventListener("click", () => showView("home"));
+    els.backHome.addEventListener("click", () => {
+      state.isWrongMode = false;
+      showView("home");
+    });
     els.clearHistory.addEventListener("click", clearHistory);
     $$(".filter-button").forEach((button) => button.addEventListener("click", () => {
       $$(".filter-button").forEach((b) => b.classList.toggle("active", b === button));
@@ -467,11 +538,12 @@
 
   function init() {
     setTheme(localStorage.getItem(STORAGE.theme) || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    els.rotationToggle.checked = localStorage.getItem(STORAGE.rotation) !== "false";
     bindEvents();
     refreshConfig();
     updateDashboard();
     checkForUpdates(false);
-    if (BANK.length !== 300) console.warn(`題庫數量目前為 ${BANK.length}，預期為 300。`);
+    if (BANK.length !== 600) console.warn(`題庫數量目前為 ${BANK.length}，預期為 600。`);
   }
 
   init();

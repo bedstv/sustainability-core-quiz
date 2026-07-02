@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="永續發展核心模組 C011、C012、C013 模擬測驗與練習題庫">
+  <meta name="description" content="永續發展 C011、C012、C013、C021、C022、C023 模擬測驗與智慧輪替題庫">
   <meta name="theme-color" content="#0f766e">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>永續核心模組｜模擬測驗</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=20260701-2">
+  <link rel="stylesheet" href="styles.css?v=20260702-1">
 </head>
 <body>
   <a class="skip-link" href="#main">跳至主要內容</a>
@@ -38,7 +38,7 @@
         <div class="hero-copy">
           <p class="eyebrow">CORE MODULE · 2026 講義版</p>
           <h1>把 45 分鐘，練成你的<br><span>永續知識主場。</span></h1>
-          <p class="hero-lead">三大主題、300 題講義題庫。可分科練習，也可依正式規格完成 25 題綜合模擬。</p>
+          <p class="hero-lead">六大主題、600 題講義題庫。自由組合測驗範圍，智慧輪替優先抽取尚未練習的題目。</p>
           <div class="hero-facts" aria-label="考試規格">
             <div><strong>25</strong><span>選擇題</span></div>
             <div><strong>45</strong><span>分鐘</span></div>
@@ -61,23 +61,18 @@
             <p class="eyebrow">CHOOSE YOUR PATH</p>
             <h2 id="setupTitle">選擇測驗範圍</h2>
           </div>
-          <p>每次隨機抽題，選項也會重新排列。</p>
+          <div class="selection-tools">
+            <span id="selectionSummary">已選 6 科 · 可用 600 題</span>
+            <button id="selectAllTopics" class="text-button" type="button">全選</button>
+            <button id="clearTopics" class="text-button" type="button">清除</button>
+          </div>
         </div>
 
         <fieldset class="topic-grid" id="topicOptions">
-          <legend class="sr-only">測驗主題</legend>
-          <label class="topic-card topic-all">
-            <input type="radio" name="topic" value="ALL" checked>
-            <span class="topic-number">ALL</span>
-            <span class="topic-content">
-              <strong>核心模組綜合</strong>
-              <small>三科平均抽題 · 正式模擬首選</small>
-            </span>
-            <span class="check" aria-hidden="true">✓</span>
-          </label>
+          <legend class="sr-only">選擇一至六份講義作為測驗範圍</legend>
           <label class="topic-card">
-            <input type="radio" name="topic" value="C011">
-            <span class="topic-number">01</span>
+            <input type="checkbox" name="topic" value="C011" checked>
+            <span class="topic-number">11</span>
             <span class="topic-content">
               <strong>C011 永續發展與 SDGs</strong>
               <small>理念、5P、17 項目標與指標</small>
@@ -85,8 +80,8 @@
             <span class="check" aria-hidden="true">✓</span>
           </label>
           <label class="topic-card">
-            <input type="radio" name="topic" value="C012">
-            <span class="topic-number">02</span>
+            <input type="checkbox" name="topic" value="C012" checked>
+            <span class="topic-number">12</span>
             <span class="topic-content">
               <strong>C012 全球淨零與 COP</strong>
               <small>氣候科學、公約、NDC 與調適</small>
@@ -94,40 +89,52 @@
             <span class="check" aria-hidden="true">✓</span>
           </label>
           <label class="topic-card">
-            <input type="radio" name="topic" value="C013">
-            <span class="topic-number">03</span>
+            <input type="checkbox" name="topic" value="C013" checked>
+            <span class="topic-number">13</span>
             <span class="topic-content">
               <strong>C013 永續金融與碳定價</strong>
               <small>國際倡議、Taxonomy、ETS 與 ICP</small>
             </span>
             <span class="check" aria-hidden="true">✓</span>
           </label>
-          <label class="topic-card wrong-card" id="wrongTopicCard" hidden>
-            <input type="radio" name="topic" value="WRONG">
-            <span class="topic-number">↺</span>
+          <label class="topic-card">
+            <input type="checkbox" name="topic" value="C021" checked>
+            <span class="topic-number">21</span>
             <span class="topic-content">
-              <strong>錯題特訓</strong>
-              <small id="wrongTopicCount">集中複習答錯題目</small>
+              <strong>C021 永續規範與 ISSB</strong>
+              <small>CSR、揭露規範、氣候與價值鏈</small>
+            </span>
+            <span class="check" aria-hidden="true">✓</span>
+          </label>
+          <label class="topic-card">
+            <input type="checkbox" name="topic" value="C022" checked>
+            <span class="topic-number">22</span>
+            <span class="topic-content">
+              <strong>C022 全球永續報告準則</strong>
+              <small>GRI 架構、重大主題與揭露項目</small>
+            </span>
+            <span class="check" aria-hidden="true">✓</span>
+          </label>
+          <label class="topic-card">
+            <input type="checkbox" name="topic" value="C023" checked>
+            <span class="topic-number">23</span>
+            <span class="topic-content">
+              <strong>C023 SASB 準則</strong>
+              <small>SICS、重大性、指標與產業應用</small>
             </span>
             <span class="check" aria-hidden="true">✓</span>
           </label>
         </fieldset>
 
-        <fieldset class="batch-picker" id="batchPicker">
-          <legend>題庫批次</legend>
-          <label>
-            <input type="radio" name="batch" value="all" checked>
-            <span><strong>全部題庫</strong><small>300 題</small></span>
+        <div class="rotation-note">
+          <span aria-hidden="true">↻</span>
+          <p><strong>智慧輪替</strong><small>開啟時優先抽取未出現、次數較少及最久未出現的題目。</small></p>
+          <label class="switch-control">
+            <input id="rotationToggle" type="checkbox" checked>
+            <span aria-hidden="true"></span>
+            <b id="rotationStatus">已開啟</b>
           </label>
-          <label>
-            <input type="radio" name="batch" value="original">
-            <span><strong>原始題庫</strong><small>180 題</small></span>
-          </label>
-          <label>
-            <input type="radio" name="batch" value="expanded">
-            <span><strong>本次新增</strong><small>120 題</small></span>
-          </label>
-        </fieldset>
+        </div>
 
         <div class="config-row">
           <fieldset class="segmented">
@@ -157,6 +164,14 @@
           <button id="startButton" class="primary-button" type="button">
             開始測驗 <span aria-hidden="true">→</span>
           </button>
+        </div>
+
+        <div class="wrong-practice" id="wrongPractice" hidden>
+          <div>
+            <strong>錯題特訓</strong>
+            <small id="wrongTopicCount">集中複習答錯題目</small>
+          </div>
+          <button id="startWrongButton" class="secondary-button" type="button">開始複習錯題</button>
         </div>
       </section>
 
@@ -288,9 +303,13 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="data/c011.js?v=20260701-2"></script>
-  <script src="data/c012.js?v=20260701-2"></script>
-  <script src="data/c013.js?v=20260701-2"></script>
-  <script src="app.js?v=20260701-2"></script>
+  <script src="data/question-builder.js?v=20260702-1"></script>
+  <script src="data/c011.js?v=20260702-1"></script>
+  <script src="data/c012.js?v=20260702-1"></script>
+  <script src="data/c013.js?v=20260702-1"></script>
+  <script src="data/c021.js?v=20260702-1"></script>
+  <script src="data/c022.js?v=20260702-1"></script>
+  <script src="data/c023.js?v=20260702-1"></script>
+  <script src="app.js?v=20260702-1"></script>
 </body>
 </html>

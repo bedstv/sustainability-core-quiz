@@ -2,7 +2,7 @@ window.QUESTION_BANK = window.QUESTION_BANK || [];
 (() => {
   const q = (n, topic, difficulty, question, options, answer, explanation, page) => ({
     id: `C012-${String(n).padStart(3, "0")}`, module: "C012",
-    batch: n <= 60 ? "original" : "expanded", topic, difficulty,
+    topic, difficulty,
     question, options, answer, explanation, page
   });
   window.QUESTION_BANK.push(
