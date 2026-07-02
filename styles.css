@@ -68,6 +68,22 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
 .brand strong, .brand small { display: block; }
 .brand small { color: var(--muted); font-size: .7rem; letter-spacing: .08em; }
 .header-actions { display: flex; align-items: center; gap: 8px; }
+.version-badge {
+  min-height: 42px; padding: 6px 10px; display: flex; align-items: center; gap: 8px;
+  border: 1px solid var(--line); border-radius: 13px; background: var(--surface);
+  font-variant-numeric: tabular-nums;
+}
+.version-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 0 4px rgba(15, 118, 110, .1); }
+.version-copy { display: flex; flex-direction: column; line-height: 1.15; }
+.version-copy small { color: var(--muted); font-size: .6rem; }
+.version-copy strong { font-size: .72rem; }
+.version-badge em { padding-left: 8px; border-left: 1px solid var(--line); color: var(--muted); font-size: .7rem; font-style: normal; font-weight: 800; }
+.version-badge[data-status="current"] .version-dot { background: #3c9a63; box-shadow: 0 0 0 4px rgba(60, 154, 99, .12); }
+.version-badge[data-status="current"] em { color: #338458; }
+.version-badge[data-status="outdated"] .version-dot { background: var(--coral); box-shadow: 0 0 0 4px rgba(230, 111, 81, .12); }
+.version-badge[data-status="outdated"] em { color: #bb563e; }
+.version-badge[data-status="error"] .version-dot { background: var(--gold); box-shadow: 0 0 0 4px rgba(215, 166, 43, .12); }
+.version-badge[data-status="local"] .version-dot { background: #899792; box-shadow: 0 0 0 4px rgba(137, 151, 146, .12); }
 .icon-button {
   width: 42px; height: 42px; border: 1px solid var(--line); border-radius: 50%;
   background: var(--surface); cursor: pointer; font-size: 1.2rem;
@@ -340,7 +356,9 @@ dialog p { color: var(--muted); }
 
 @media (max-width: 620px) {
   .site-header, .hero, .panel, .dashboard-section, .quiz-shell, .result-shell { width: min(100% - 24px, 1180px); }
-  .site-header { padding: 14px 0; }
+  .site-header { padding: 14px 0; flex-wrap: wrap; gap: 10px; }
+  .header-actions { width: 100%; justify-content: flex-end; }
+  .version-badge { padding: 6px 8px; }
   .hero { min-height: 380px; padding: 34px 24px; border-radius: 25px; }
   .hero h1 { font-size: 2.35rem; }
   .hero-facts { gap: 16px; }

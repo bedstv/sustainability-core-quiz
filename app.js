@@ -1,7 +1,11 @@
 (() => {
   "use strict";
 
-  const SITE_VERSION = "20260702-1";
+  const SITE_VERSION = "20260702-2";
+  const QUESTION_REVISION = "c022-exclude-pages-41-63-v1";
+  const REPLACED_C022_IDS = new Set(
+    Array.from({ length: 20 }, (_, index) => `C022-${String(index + 75).padStart(3, "0")}`)
+  );
   const BANK = window.QUESTION_BANK || [];
   const MODULES = {
     C011: "C011 永續發展與 SDGs",
@@ -16,6 +20,7 @@
     wrong: "sustainabilityQuizWrongV1",
     coverage: "sustainabilityQuizCoverageV1",
     rotation: "sustainabilityQuizRotationEnabled",
+    questionRevision: "sustainabilityQuizQuestionRevision",
     theme: "sustainabilityQuizTheme"
   };
   const state = {
@@ -41,6 +46,9 @@
     result: $("#resultView"),
     theme: $("#themeToggle"),
     update: $("#updateButton"),
+    versionBadge: $("#versionBadge"),
+    versionNumber: $("#versionNumber"),
+    versionStatus: $("#versionStatus"),
     count: $("#questionCount"),
     start: $("#startButton"),
     startWrong: $("#startWrongButton"),
@@ -95,6 +103,16 @@
     catch { return fallback; }
   }
 
+  function migrateQuestionRevision() {
+    if (localStorage.getItem(STORAGE.questionRevision) === QUESTION_REVISION) return;
+    const wrong = readJSON(STORAGE.wrong, []).filter((id) => !REPLACED_C022_IDS.has(id));
+    localStorage.setItem(STORAGE.wrong, JSON.stringify(wrong));
+    const coverage = readJSON(STORAGE.coverage, {});
+    REPLACED_C022_IDS.forEach((id) => delete coverage[id]);
+    localStorage.setItem(STORAGE.coverage, JSON.stringify(coverage));
+    localStorage.setItem(STORAGE.questionRevision, QUESTION_REVISION);
+  }
+
   function shuffle(items) {
     const array = [...items];
     for (let i = array.length - 1; i > 0; i--) {
@@ -117,19 +135,33 @@
     els.theme.setAttribute("aria-label", theme === "dark" ? "切換淺色模式" : "切換深色模式");
   }
 
+  function formatVersion(version) {
+    return version.replace(/^(\d{4})(\d{2})(\d{2})(.*)$/, "$1.$2.$3$4");
+  }
+
+  function setVersionStatus(status, text, title) {
+    els.versionBadge.dataset.status = status;
+    els.versionStatus.textContent = text;
+    els.versionBadge.title = title;
+  }
+
   async function checkForUpdates(manual = false) {
     if (location.protocol === "file:") {
+      setVersionStatus("local", "本機預覽", "本機檔案無法確認線上是否已有更新");
       if (manual) toast("本機預覽不檢查線上版本。");
       return;
     }
+    setVersionStatus("checking", "檢查中", "正在向網站確認最新題庫版本");
     try {
       const response = await fetch(`version.json?t=${Date.now()}`, { cache: "no-store" });
       if (!response.ok) throw new Error("Version check failed");
       const { version } = await response.json();
       if (!version || version === SITE_VERSION) {
+        setVersionStatus("current", "已確認最新版", `已連線確認目前版本 ${formatVersion(SITE_VERSION)} 為最新版`);
         if (manual) toast("目前已是最新版本。");
         return;
       }
+      setVersionStatus("outdated", "發現新版", `目前為 ${formatVersion(SITE_VERSION)}，最新版本為 ${formatVersion(version)}`);
       const reloadKey = `sustainabilityQuizReloadedFor-${version}`;
       if (sessionStorage.getItem(reloadKey)) {
         toast("已有新版，請重新整理頁面。");
@@ -140,6 +172,7 @@
       url.searchParams.set("v", version);
       location.replace(url.toString());
     } catch {
+      setVersionStatus("error", "無法驗證", "目前無法連線確認最新題庫版本，請稍後再試");
       if (manual) toast("暫時無法檢查更新，請稍後再試。");
     }
   }
@@ -538,6 +571,8 @@
 
   function init() {
     setTheme(localStorage.getItem(STORAGE.theme) || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    els.versionNumber.textContent = formatVersion(SITE_VERSION);
+    migrateQuestionRevision();
     els.rotationToggle.checked = localStorage.getItem(STORAGE.rotation) !== "false";
     bindEvents();
     refreshConfig();
