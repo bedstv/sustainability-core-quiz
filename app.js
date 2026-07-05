@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const SITE_VERSION = "20260702-2";
+  const SITE_VERSION = "20260705-1";
   const QUESTION_REVISION = "c022-exclude-pages-41-63-v1";
   const REPLACED_C022_IDS = new Set(
     Array.from({ length: 20 }, (_, index) => `C022-${String(index + 75).padStart(3, "0")}`)
@@ -13,7 +13,9 @@
     C013: "C013 永續金融與碳定價",
     C021: "C021 永續規範與 ISSB",
     C022: "C022 全球永續報告準則",
-    C023: "C023 SASB 準則"
+    C023: "C023 SASB 準則",
+    C024: "C024 AA1000 保證標準",
+    C025: "C025 ISAE 3000 確信標準"
   };
   const STORAGE = {
     history: "sustainabilityQuizHistoryV1",
@@ -578,7 +580,7 @@
     refreshConfig();
     updateDashboard();
     checkForUpdates(false);
-    if (BANK.length !== 600) console.warn(`題庫數量目前為 ${BANK.length}，預期為 600。`);
+    if (BANK.length !== 800) console.warn(`題庫數量目前為 ${BANK.length}，預期為 800。`);
   }
 
   init();
