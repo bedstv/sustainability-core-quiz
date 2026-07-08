@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const SITE_VERSION = "20260705-1";
+  const SITE_VERSION = "20260708-1";
   const QUESTION_REVISION = "c022-exclude-pages-41-63-v1";
   const REPLACED_C022_IDS = new Set(
     Array.from({ length: 20 }, (_, index) => `C022-${String(index + 75).padStart(3, "0")}`)
@@ -15,7 +15,13 @@
     C022: "C022 全球永續報告準則",
     C023: "C023 SASB 準則",
     C024: "C024 AA1000 保證標準",
-    C025: "C025 ISAE 3000 確信標準"
+    C025: "C025 ISAE 3000 確信標準",
+    E011: "E011 我國淨零政策與法規",
+    E012: "E012 永續相關國際標準 ISO",
+    E013: "E013 溫室氣體管理與碳中和",
+    S011: "S011 國際社會共融規範",
+    S012: "S012 人權、強迫勞動與不平等揭露",
+    S013: "S013 我國社會共融法規與行動"
   };
   const STORAGE = {
     history: "sustainabilityQuizHistoryV1",
@@ -580,7 +586,7 @@
     refreshConfig();
     updateDashboard();
     checkForUpdates(false);
-    if (BANK.length !== 800) console.warn(`題庫數量目前為 ${BANK.length}，預期為 800。`);
+    if (BANK.length !== 1400) console.warn(`題庫數量目前為 ${BANK.length}，預期為 1400。`);
   }
 
   init();
