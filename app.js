@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const SITE_VERSION = "20260708-1";
+  const SITE_VERSION = "20260717-1";
   const QUESTION_REVISION = "c022-exclude-pages-41-63-v1";
   const REPLACED_C022_IDS = new Set(
     Array.from({ length: 20 }, (_, index) => `C022-${String(index + 75).padStart(3, "0")}`)
@@ -21,7 +21,14 @@
     E013: "E013 溫室氣體管理與碳中和",
     S011: "S011 國際社會共融規範",
     S012: "S012 人權、強迫勞動與不平等揭露",
-    S013: "S013 我國社會共融法規與行動"
+    S013: "S013 我國社會共融法規與行動",
+    G011: "G011 國際永續資訊揭露趨勢",
+    G012: "G012 企業永續發展與因應策略",
+    G013: "G013 金管會企業永續政策",
+    G021: "G021 企業永續管理策略與實務",
+    G022: "G022 永續風險管理與策略分析",
+    G023: "G023 利害關係人與重大性分析",
+    G024: "G024 企業永續獎評審準則"
   };
   const STORAGE = {
     history: "sustainabilityQuizHistoryV1",
@@ -586,7 +593,7 @@
     refreshConfig();
     updateDashboard();
     checkForUpdates(false);
-    if (BANK.length !== 1400) console.warn(`題庫數量目前為 ${BANK.length}，預期為 1400。`);
+    if (BANK.length !== 2100) console.warn(`題庫數量目前為 ${BANK.length}，預期為 2100。`);
   }
 
   init();
