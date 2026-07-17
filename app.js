@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const SITE_VERSION = "20260717-1";
+  const SITE_VERSION = "20260717-2";
   const QUESTION_REVISION = "c022-exclude-pages-41-63-v1";
   const REPLACED_C022_IDS = new Set(
     Array.from({ length: 20 }, (_, index) => `C022-${String(index + 75).padStart(3, "0")}`)
@@ -28,7 +28,8 @@
     G021: "G021 企業永續管理策略與實務",
     G022: "G022 永續風險管理與策略分析",
     G023: "G023 利害關係人與重大性分析",
-    G024: "G024 企業永續獎評審準則"
+    G024: "G024 企業永續獎評審準則",
+    G099: "G099 國內外企業永續發展與因應策略概論（測試用）"
   };
   const STORAGE = {
     history: "sustainabilityQuizHistoryV1",
@@ -593,7 +594,7 @@
     refreshConfig();
     updateDashboard();
     checkForUpdates(false);
-    if (BANK.length !== 2100) console.warn(`題庫數量目前為 ${BANK.length}，預期為 2100。`);
+    if (BANK.length !== 2200) console.warn(`題庫數量目前為 ${BANK.length}，預期為 2200。`);
   }
 
   init();
